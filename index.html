@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>滇南古道韵悠扬—茶马古道传统村落的时空演化</title>
+    <!-- TailwindCSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css"
+    />
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+      body {
+        font-family: "Microsoft YaHei", "STKaiti", "KaiTi", serif;
+        background: linear-gradient(120deg, #f0f8ff 0%, #fff7e6 100%);
+      }
+      .btn-theme {
+        background: #c8b08b;
+        color: #4b3f2f;
+        border: 1px solid #8b4513;
+        transition: all 0.2s;
+      }
+      .btn-theme:hover {
+        background: #8b4513;
+        color: #fff7e6;
+        border-color: #c8b08b;
+      }
+      .map-container {
+        min-height: 600px;
+        position: relative;
+      }
+      .bg-white {
+        background: #fffdf8;
+      }
+      .rounded-lg {
+        border-radius: 16px;
+      }
+      .layer-switcher {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1000;
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+  <body class="bg-primary">
+    <main class="container mx-auto px-4 py-8">
+      <!-- 概览地图 -->
+      <section id="overview" class="mb-16">
+        <div class="map-container">
+          <div class="layer-switcher">
+            <h3 class="font-bold mb-2 text-primary">图层说明</h3>
+            <p class="text-sm text-gray-600 mb-1">
+              点击按钮切换地图图层，体验古今村落与古道主线的空间关系。
+            </p>
+            <div class="flex space-x-2">
+              <button
+                class="px-3 py-1 btn-theme rounded"
+                onclick="switchLayer('ancient')"
+              >
+                古代村落
+              </button>
+              <button
+                class="px-3 py-1 btn-theme rounded"
+                onclick="switchLayer('modern')"
+              >
+                现代村落
+              </button>
+              <button
+                class="px-3 py-1 btn-theme rounded"
+                onclick="switchLayer('road')"
+              >
+                突出古道
+              </button>
+              <button
+                class="px-3 py-1 btn-theme rounded"
+                onclick="switchLayer('all')"
+              >
+                全部显示
+              </button>
+            </div>
+          </div>
+          <div
+            id="overviewMap"
+            class="w-full h-full rounded-lg shadow-lg"
+            style="min-height: 500px"
+          ></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 地图相关JS -->
+    <script>
+      // 1. 初始化地图
+      const map = L.map("overviewMap", {
+        center: [26, 100], // 可根据实际调整中心
+        zoom: 6,
+      });
+
+      // 2. 加载中国省界GeoJSON
+      fetch("中国_省.geojson")
+        .then((res) => res.json())
+        .then((geojson) => {
+          L.geoJSON(geojson, {
+            style: { color: "#8B4513", weight: 1, fillOpacity: 0 },
+          }).addTo(map);
+        });
+
+      // 3. 加载主路线
+      fetch("主路线.json")
+        .then((res) => res.json())
+        .then((geojson) => {
+          L.geoJSON(geojson, {
+            style: { color: "#B22222", weight: 4 },
+          }).addTo(map);
+        });
+
+      // 4. 加载次路线
+      fetch("次路线.json")
+        .then((res) => res.json())
+        .then((geojson) => {
+          L.geoJSON(geojson, {
+            style: { color: "#FFD700", weight: 2, dashArray: "5 5" },
+          }).addTo(map);
+        });
+
+      // 5. 古代村落点
+      const ancientVillages = [
+        { name: "普洱", coord: [24.5, 99.6] },
+        { name: "大理古城", coord: [25.1, 100.3] },
+        { name: "丽江束河", coord: [26.9, 100.2] },
+        { name: "香格里拉独克宗", coord: [27.8, 101.7] },
+        { name: "云南驿村", coord: [25.38, 100.52] },
+        { name: "诺邓村", coord: [25.963, 99.363] },
+        { name: "凤阳邑", coord: [25.6, 100.15] },
+        { name: "那柯里村", coord: [22.924, 101.046] },
+        { name: "花桥村", coord: [27.18, 103.15] },
+        // ...可继续补充
+      ];
+      let ancientLayer = L.layerGroup(
+        ancientVillages.map((v) =>
+          L.circleMarker(v.coord, {
+            radius: 7,
+            color: "#CD5C5C",
+            fillColor: "#CD5C5C",
+            fillOpacity: 0.8,
+          }).bindPopup(`<b>${v.name}</b>`)
+        )
+      ).addTo(map);
+
+      // 6. 现代村落点
+      const modernVillages = [
+        { name: "楚雄村落", coord: [25.2, 100.4] },
+        { name: "普洱村落", coord: [25.5, 101.5] },
+        { name: "西昌村落", coord: [27.2, 103.6] },
+        { name: "理塘村落", coord: [28.7, 104.9] },
+        { name: "墨江新村", coord: [24.41, 101.55] },
+        { name: "祥云新村", coord: [25.13, 100.98] },
+        { name: "玉龙新村", coord: [26.87, 100.23] },
+        { name: "昆明新村", coord: [25.04, 102.72] },
+        { name: "巴塘新村", coord: [29.99, 102.84] },
+        { name: "维西新村", coord: [27.44, 99.99] },
+        { name: "德钦新村", coord: [27.8, 101.25] },
+        { name: "拉萨新村", coord: [29.65, 91.13] },
+      ];
+      let modernLayer = L.layerGroup(
+        modernVillages.map((v) =>
+          L.circleMarker(v.coord, {
+            radius: 6,
+            color: "#228B22",
+            fillColor: "#228B22",
+            fillOpacity: 0.8,
+          }).bindPopup(`<b>${v.name}</b>`)
+        )
+      );
+
+      // 7. 图层切换按钮逻辑
+      function switchLayer(type) {
+        map.removeLayer(ancientLayer);
+        map.removeLayer(modernLayer);
+        if (type === "ancient") {
+          ancientLayer.addTo(map);
+        } else if (type === "modern") {
+          modernLayer.addTo(map);
+        } else if (type === "all") {
+          ancientLayer.addTo(map);
+          modernLayer.addTo(map);
+        }
+        // "road" 只显示路线，不显示村落点
+      }
+      // 默认显示全部
+      ancientLayer.addTo(map);
+      modernLayer.addTo(map);
+    </script>
+  </body>
+</html>
